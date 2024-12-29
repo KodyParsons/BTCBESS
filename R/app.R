@@ -1,4 +1,4 @@
-# Load required packages
+# Load required packages ----
 library(shiny)
 library(DBI)
 library(RSQLite)
@@ -11,15 +11,17 @@ for (file in list.files("R", pattern = "\\.R$", full.names = TRUE)) {
   source(file)
 }
 
-# UI definition
-ui <- fluidPage(
-  titlePanel("Bitcoin Mining + BESS Project Finance Calculator"),
-  
-  sidebarLayout(
-    sidebarPanel(
-      # Project Parameters
-      selectInput("miner_model", "Miner Model", choices = NULL),
-      selectInput("storage_system", "Select Storage System", choices = NULL),
+# UI definition ----
+sidebarLayout(
+  sidebarPanel(
+    # Project Parameters
+    selectInput("miner_model", 
+                "Select Mining Hardware", 
+                choices = NULL),  # Will be populated from miners$model_name
+    
+    selectInput("storage_system", 
+                "Select Storage System", 
+                choices = NULL),  # Will be populated from storage_systems$model_name
       
       # Financial Parameters
       numericInput("btc_price", "Bitcoin Price (USD)", value = 50000),
@@ -40,16 +42,22 @@ ui <- fluidPage(
                  plotlyOutput("sensitivity_plot")
         ),
         tabPanel("Operating Strategy",
-                 plotlyOutput("daily_operation_plot")
+                 plotlyOutput("daily_operation_plot"),
+        ),
+        # Add this new tab:
+        tabPanel("Debug", 
+                 h4("Miners Data:"),
+                 verbatimTextOutput("debug_miners"),
+                 h4("Storage Systems Data:"),
+                 verbatimTextOutput("debug_storage")
         )
       )
     )
   )
-)
 
-# Server logic
+# Server logic ----
 server <- function(input, output, session) {
-  # Database queries
+  # Database queries remain the same
   miners <- reactive({
     con <- db_connect()
     on.exit(dbDisconnect(con))
@@ -62,12 +70,37 @@ server <- function(input, output, session) {
     get_storage_systems(con)
   })
   
-  # Update UI choices
+  # Update UI choices with more informative labels
   observe({
+    # Get the data
+    miner_data <- miners()
+    storage_data <- storage_systems()
+    
+    # Update miner choices with hashrate info
     updateSelectInput(session, "miner_model",
-                      choices = miners()$model_name)
+                      choices = setNames(
+                        miner_data$model_name,
+                        paste0(miner_data$model_name, 
+                               " (", miner_data$hashrate, " TH/s)")
+                      ))
+    
+    # Update storage choices with capacity info
     updateSelectInput(session, "storage_system",
-                      choices = storage_systems()$system_name)
+                      choices = setNames(
+                        storage_data$model_name,
+                        paste0(storage_data$model_name, 
+                               " (", storage_data$capacity_kwh, " kWh)")
+                      ))
+  })
+  
+
+  # Add these debug outputs:
+  output$debug_miners <- renderPrint({
+    str(miners())
+  })
+  
+  output$debug_storage <- renderPrint({
+    str(storage_systems())
   })
   
   # Selected equipment
@@ -78,10 +111,10 @@ server <- function(input, output, session) {
   
   selected_storage <- reactive({
     req(input$storage_system)
-    storage_systems() %>% filter(system_name == input$storage_system)
+    storage_systems() %>% filter(model_name == input$storage_system)  # Changed from system_name to model_name
   })
   
-  # Project metrics calculation
+  # Project metrics calculation ----
   project_metrics <- reactive({
     req(selected_miner(), selected_storage())
     
@@ -95,7 +128,7 @@ server <- function(input, output, session) {
     )
   })
   
-  # Outputs
+  # Outputs ----
   output$npv_output <- renderText({
     req(project_metrics())
     paste("NPV: $", format(round(project_metrics()$npv), big.mark=","))
@@ -120,5 +153,5 @@ server <- function(input, output, session) {
   })
 }
 
-# Run the application
+# Run the application ----
 shinyApp(ui = ui, server = server)
