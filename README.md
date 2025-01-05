@@ -3,20 +3,20 @@
 ## Step 1
 - mining profitability calculator for BTC asics with current data
  
- ## Step 2
+## Step 2
 - Solar + Battery Project finance calculator with BESS options as inputs
 - gets to a $/MWh price for the BESS system. 
  
- ## Step 3
+## Step 3
  - build a basic BESS optimizer for solar + battery projects + Bitcoin Miner Dispatch Program
  
- ## Step 4 -
- - Analyze project finance of 
+## Step 4
+ - Analyze project finance metrics including:
+   - ROI analysis for combined solar + battery + mining operations
+   - Comparison of operational costs and revenue streams
+   - Sensitivity analysis for key variables (BTC price, electricity costs, etc.)
  
- ## Step 5 - 
+## Step 5 
  - compare the monthly financing costs and cash flows relative to just buying a holding bitcoin. 
  - basically how do you tell which is more worthwhile place to put your money? 
  - said yet another way, what is the mining cost per bitcoin and compare it to spot. 
- 
- 
- 
